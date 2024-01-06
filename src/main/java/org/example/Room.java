@@ -8,7 +8,7 @@ public class Room implements Serializable {
     Player player2;
     Status status;
     char[][] board;
-    int index = 1;
+    static int index = 1;
     public volatile isMyTurn gameInProgress;
     char whoWon;
 

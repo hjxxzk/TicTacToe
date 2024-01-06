@@ -52,6 +52,7 @@ public class TicTacToeClient {
                             System.err.println("Looking for a player...");
                             Thread.sleep(1000);
                         }
+                        System.err.println("Player found!");
                         playGame(player, game);
                     }
 
@@ -118,15 +119,16 @@ public class TicTacToeClient {
 
                     Room selectedRoom = (Room) roomComboBox.getSelectedItem();
                     if (selectedRoom != null) {
-                        System.err.println("Joining room: " + selectedRoom.roomID);
+                        System.err.println("Joining Room " + selectedRoom.roomID);
                         try {
                             game.joinRoom(player, String.valueOf(selectedRoom.roomID));
+                            playGame(player, game);
                         } catch (RemoteException ex) {
                             throw new RuntimeException(ex);
                         }
                         frame.dispose();
 
-                        playGame(player, game);
+
                     }
                 }
             });
@@ -137,15 +139,15 @@ public class TicTacToeClient {
                     try {
                         game.createRoom(player);
 
-                    System.err.println("Creating a room");
+                    System.err.println("Creating a room " + game.findMyRoom(player).roomID);
                     frame.dispose();
 
                         while (!game.waitForRoom(player)) {     //wait for other player
                             System.err.println("Looking for a player...");
                             Thread.sleep(1000);
                         }
-
-                    playGame(player, game);
+                        System.err.println("Player found!");
+                        playGame(player, game);
                     } catch (RemoteException | InterruptedException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -175,9 +177,8 @@ public class TicTacToeClient {
             TicTacToeBoard board = new TicTacToeBoard(); //set starting board
 
             board.updateBoard(game.display(player), false, player, game); //update board
-            System.err.println("Player found!");
             System.err.println("Waiting for game to begin...");
-            player.setSign(game.getsign(player)); //set sign
+            player.setSign(game.getSign(player)); //set sign
 
             System.err.println("Game has started");
 

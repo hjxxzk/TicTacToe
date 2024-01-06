@@ -95,29 +95,6 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
     }
 
     @Override
-    public boolean lookForPlayer(Player player) throws RemoteException {
-
-         Player readyPlayer = players.stream()
-                 .filter(Player -> Player.getStatus() == Status.READY && !Player.getId().equals(player.getId()))
-                 .findFirst()
-                 .orElse(null);
-
-         if(readyPlayer!= null) {
-             Room room = new Room(players.get(0));
-             room.player1.setSign('X');
-             room.player2.setSign('O');
-             room.player1.setIsMyTurn(isMyTurn.YES);
-             room.player2.setIsMyTurn(isMyTurn.NO);
-             room.setBoard(new char[][]{{' ', ' ', ' '},{' ', ' ',' '},{' ', ' ', ' '}});
-             rooms.add(room);
-
-             return true;
-         }
-
-        return false;
-    }
-
-    @Override
     public boolean waitForRoom(Player player) throws RemoteException {
 
         Room doWeHaveARoom = rooms.stream()
@@ -138,14 +115,16 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
         return Objects.requireNonNull(roomActive).gameInProgress == isMyTurn.YES;
     }
 
-    private Room findMyRoom(Player player)   {
-        return rooms.stream().filter(Room -> Room.player1.id.equals(player.id) || Room.player2.id.equals(player.id))
+    @Override
+    public Room findMyRoom(Player player)   {
+        return rooms.stream().filter(Room -> Room.player1.id.equals(player.id) ||
+                (Room.player2 != null && Room.player2.id.equals(player.id)))
                 .findFirst()
                 .orElse(null);
     }
 
     @Override
-    public char getsign(Player player) throws RemoteException {
+    public char getSign(Player player) throws RemoteException {
 
         Room roomActive = rooms.stream().filter(Room -> Room.player1.id.equals(player.id))
                 .findFirst()
@@ -247,7 +226,7 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
          return didSomeoneWon(playerOne, playerTwo, roomActive) || isADraw(roomActive);
     }
 
-    private static boolean didSomeoneWon (char playerOne, char playerTwo, Room roomActive)   {
+    private static boolean didSomeoneWon(char playerOne, char playerTwo, Room roomActive)   {
 
        char[][] board = roomActive.board;
         for (int i = 0; i < 3; i++) {
@@ -281,7 +260,7 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
 
     }
 
-    private static boolean isADraw( Room roomActive)   {
+    private static boolean isADraw(Room roomActive)   {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (roomActive.board[i][j] == ' ') {
