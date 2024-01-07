@@ -47,7 +47,7 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
                     }
 
                     if (roomActive.player1.moveMade) {
-                        System.out.println("true");
+                   //     System.out.println("true");
                         roomActive.setBoard(roomActive.player1.getBoard());
                         roomActive.player1.setMoveMade(false);
                     }
@@ -208,13 +208,13 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
     public void wantToPlay(Player player) throws RemoteException {
         Room room = findMyRoom(player);
 
-        if(room.player1.id.equals(player.id))   {
+        if(room.player1 != null && room.player1.id.equals(player.id))   {
             room.player1.setWantToPlayNext(isMyTurn.YES);
-        }   else {
+        }   else if (room.player2 != null) {
             room.player2.setWantToPlayNext(isMyTurn.YES);
         }
 
-        if(room.player1.wantToPlayNext.equals(isMyTurn.YES) && room.player2.wantToPlayNext.equals(isMyTurn.YES))    {
+        if(room.player1 != null && room.player1.wantToPlayNext.equals(isMyTurn.YES) && room.player2 != null && room.player2.wantToPlayNext.equals(isMyTurn.YES))    {
             room.setGameInProgress(isMyTurn.YES);
         }
 
@@ -331,8 +331,13 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
     }
 
     private static boolean didSomeoneWon(char playerOne, char playerTwo, Room roomActive)   {
-        System.out.println("tak");
-       char[][] board = roomActive.board;
+     //   System.out.println("tak");
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        char[][] board = roomActive.board;
         for (int i = 0; i < 3; i++) {
             if ((board[i][0] == playerOne && board[i][1] == playerOne && board[i][2] == playerOne) ||   //vertical
                     (board[0][i] == playerOne && board[1][i] == playerOne && board[2][i] == playerOne)) { //horizontal
@@ -365,7 +370,7 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
     }
 
     private static boolean isADraw(Room roomActive)   {
-        System.out.println("tak");
+      //  System.out.println("tak");
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (roomActive.board[i][j] == ' ') {
@@ -389,7 +394,7 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
             ServerSocket serverSocket = new ServerSocket(1098);
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("New client connected: " + clientSocket.getInetAddress());
+                System.err.println("New client connected: " + clientSocket.getInetAddress());
 
 //                // Tworzenie wątku obsługującego klienta
 //                Thread clientThread = new Thread(new ClientHandler(clientSocket));
