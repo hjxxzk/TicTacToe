@@ -4,12 +4,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class TicTacToeClient {
@@ -75,12 +74,134 @@ public class TicTacToeClient {
 
                 try {
                     Socket socket = new Socket("localhost", 1098);
-                    ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
                     ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
 
 
+                    ArrayList<Room> roomsList = (ArrayList<Room>) inputStream.readObject();
 
-                } catch (IOException exception) {
+                    JFrame frame = new JFrame("Room Selection");
+                    frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                    frame.setSize(300, 200);
+
+                    JPanel panel = new JPanel();
+                    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+                    panel.setBorder(BorderFactory.createEmptyBorder(40, 20, 40, 20));
+                    panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+                    JComboBox<Room> roomComboBox = new JComboBox<>(roomsList.toArray(new Room[0]));
+                    makeRoomsList(roomComboBox);
+
+
+                    JButton joinButton = new JButton("Observe");
+                    joinButton.setMargin(new Insets(5, 10, 5, 10));
+                    joinButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+                    panel.add(roomComboBox);
+                    panel.add(Box.createRigidArea(new Dimension(0, 5)));
+                    panel.add(joinButton);
+
+                    frame.add(panel);
+                    frame.setVisible(true);
+                    frame.setLocationRelativeTo(null);
+
+                    SwingWorker<Void, ArrayList<Room>> gameWorker = new SwingWorker<Void, ArrayList<Room>>() {
+                        @Override
+                        protected Void doInBackground() throws Exception {
+                            while (true) {
+                                try (Socket socket = new Socket("localhost", 1098);
+                                     ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream())) {
+
+                                    ArrayList<Room> roomsList = (ArrayList<Room>) inputStream.readObject();
+                                    publish(roomsList); // Przesyłaj listę pokoi
+                                    Thread.sleep(2000);
+
+                                } catch (IOException | ClassNotFoundException ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        }
+
+                        @Override
+                        protected void process(java.util.List<ArrayList<Room>> chunks) {
+
+                            ArrayList<Room> latestRoomsList = chunks.get(chunks.size() - 1);
+                            roomComboBox.setModel(new DefaultComboBoxModel<>(latestRoomsList.toArray(new Room[0])));
+                        }
+                    };
+
+                    joinButton.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+
+                            Room selectedRoom = (Room) roomComboBox.getSelectedItem();
+                            if (selectedRoom != null) {
+                                System.err.println("Joining Room " + selectedRoom.roomID);
+
+                                frame.dispose();
+
+                                JFrame frame = new JFrame("Tic Tac Toe " + selectedRoom.roomID);
+                                frame.setSize(300, 300);
+                                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                                JPanel boardPanel = new JPanel();
+                                boardPanel.setLayout(new GridLayout(3, 3));
+                                frame.add(boardPanel);
+                                frame.setVisible(true);
+                                frame.setLocationRelativeTo(null);
+
+                                SwingWorker<Void, ArrayList<Room>> observerWorker = new SwingWorker<Void, ArrayList<Room>>() {
+                                    @Override
+                                    protected Void doInBackground() throws Exception {
+
+                                        while (true) {
+                                            try (Socket socket = new Socket("localhost", 1098);
+                                                 ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream())) {
+
+                                                ArrayList<Room> roomsList = (ArrayList<Room>) inputStream.readObject();
+                                                Room chosenRoom = roomsList.stream().filter(Room -> Room.roomID == selectedRoom.roomID)
+                                                        .findFirst()
+                                                        .orElse(null);
+
+                                                if (chosenRoom == null) {
+                                                    System.err.println("Room closed");
+                                                    ButtonModel model = observeButton.getModel();
+                                                    model.setPressed(true);
+                                                    observeButton.doClick();
+                                                    model.setPressed(false);
+                                                    frame.dispose();
+                                                    break;
+                                                } else {
+                                                    makeBoard(boardPanel, chosenRoom.board);
+                                                }
+
+                                                publish(roomsList);
+                                                Thread.sleep(2000);
+
+                                            } catch (IOException | ClassNotFoundException ex) {
+                                                ex.printStackTrace();
+                                            }
+                                        }
+                                        return null;
+                                    }
+
+                                    @Override
+                                    protected void process(java.util.List<ArrayList<Room>> chunks) {
+
+                                        ArrayList<Room> latestRoomsList = chunks.get(chunks.size() - 1);
+                                        roomComboBox.setModel(new DefaultComboBoxModel<>(latestRoomsList.toArray(new Room[0])));
+                                    }
+                                };
+
+                                observerWorker.execute();
+
+                            }
+                        }
+                    });
+
+                    gameWorker.execute();
+
+
+                } catch (IOException | ClassNotFoundException exception) {
                     exception.printStackTrace();
                 }
 
@@ -90,6 +211,22 @@ public class TicTacToeClient {
         frame.setVisible(true);
         frame.setLocationRelativeTo(null);
     }
+
+    public static void makeBoard(JPanel boardPanel, char[][] board)  {
+        boardPanel.removeAll();
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                JButton button = new JButton(String.valueOf(board[i][j]));
+                button.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 40));
+                boardPanel.add(button);
+            }
+        }
+        boardPanel.revalidate();
+        boardPanel.repaint();
+
+    }
+
 
 
 

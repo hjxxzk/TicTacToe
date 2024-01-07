@@ -1,5 +1,8 @@
 package org.example;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.Naming;
@@ -8,6 +11,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnable, TicTacToeService {
@@ -57,15 +61,15 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
                         roomActive.player2.setMoveMade(false);
                     }
                 }
-                roomActive.player1.setWantToPlayNext(isMyTurn.NO);
-                roomActive.player2.setWantToPlayNext(isMyTurn.NO);
-                roomActive.setGameInProgress(isMyTurn.NO);
-                roomActive.player2.setIsMyTurn(isMyTurn.NO);
-                roomActive.player1.setIsMyTurn(isMyTurn.NO);
-                roomActive.player1.setMoveMade(false);
-                roomActive.player2.setMoveMade(false);
-                roomActive.player1.setSign(playerTwo);
-                roomActive.player2.setSign(playerOne);
+                Objects.requireNonNull(roomActive).player1.setWantToPlayNext(isMyTurn.NO);
+                Objects.requireNonNull(roomActive).player2.setWantToPlayNext(isMyTurn.NO);
+                Objects.requireNonNull(roomActive).setGameInProgress(isMyTurn.NO);
+                Objects.requireNonNull(roomActive).player2.setIsMyTurn(isMyTurn.NO);
+                Objects.requireNonNull(roomActive).player1.setIsMyTurn(isMyTurn.NO);
+                Objects.requireNonNull(roomActive).player1.setMoveMade(false);
+                Objects.requireNonNull(roomActive).player2.setMoveMade(false);
+                Objects.requireNonNull(roomActive).player1.setSign(playerTwo);
+                Objects.requireNonNull(roomActive).player2.setSign(playerOne);
               //
                 try {
                     Thread.sleep(5000);
@@ -143,19 +147,8 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
     @Override
     public boolean waitForRoom(Player player) throws RemoteException {
 
-        Room doWeHaveARoom = rooms.stream()
-                .filter(Room -> (Room.getPlayer1().getId().equals(player.getId())))
-                .findFirst()
-                .orElse(null);
-        if (doWeHaveARoom != null)  {
-            return Objects.requireNonNull(doWeHaveARoom).player2 != null;
-        }   else {
-            doWeHaveARoom = rooms.stream()
-                    .filter(Room -> (Room.getPlayer2().getId().equals(player.getId())))
-                    .findFirst()
-                    .orElse(null);
-        }
-        return Objects.requireNonNull(doWeHaveARoom).player1 != null;
+        Room doWeHaveARoom = findMyRoom(player);
+        return Objects.requireNonNull(doWeHaveARoom).player1 != null && Objects.requireNonNull(doWeHaveARoom).player2 != null;
     }
 
     @Override
@@ -325,9 +318,8 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
         if(didWin)  {
             return true;
         }
-        boolean isDraw = isADraw(roomActive);
 
-        return isDraw;
+        return isADraw(roomActive);
     }
 
     private static boolean didSomeoneWon(char playerOne, char playerTwo, Room roomActive)   {
@@ -394,11 +386,9 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
             ServerSocket serverSocket = new ServerSocket(1098);
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                System.err.println("New client connected: " + clientSocket.getInetAddress());
+                ObjectOutputStream outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+                outputStream.writeObject(rooms);
 
-//                // Tworzenie wątku obsługującego klienta
-//                Thread clientThread = new Thread(new ClientHandler(clientSocket));
-//                clientThread.start();
             }
 
         } catch (Exception exception) {
