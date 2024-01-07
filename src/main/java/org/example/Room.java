@@ -20,33 +20,14 @@ public class Room implements Serializable {
         this.gameInProgress = gameInProgress;
     }
 
-    public synchronized isMyTurn getGameInProgress() {
-        return gameInProgress;
-    }
-
-    public char[][] getBoard() {
-        return board;
-    }
-
     public void setBoard(char[][] board) {
         this.board = board;
-    }
-
-    public Player getPlayer1() {
-        return player1;
-    }
-
-    public Player getPlayer2() {
-        return player2;
     }
 
     public void setStatus(Status status) {
         this.status = status;
     }
 
-    public int getRoomID() {
-        return roomID;
-    }
 
     public void setPlayer2(Player player2) {
         this.player2 = player2;
