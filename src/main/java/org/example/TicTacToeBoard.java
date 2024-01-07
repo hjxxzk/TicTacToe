@@ -25,20 +25,20 @@ public class TicTacToeBoard extends JFrame {
         add(boardPanel);
         setVisible(true);
         setLocationRelativeTo(null);
-//        addWindowListener(new WindowAdapter() {
-//            @Override
-//            public void windowClosing(WindowEvent e) {
-//
-//                try {
-//                    game.logOut(player);
-//                } catch (RemoteException ex) {
-//                    throw new RuntimeException(ex);
-//                }
-//                System.err.println("Closing the application...");
-//
-//                System.exit(0);
-//            }
-//        });
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+
+                try {
+                    game.logOut(player);
+                } catch (RemoteException ex) {
+                    throw new RuntimeException(ex);
+                }
+                System.err.println("Closing the application...");
+
+                System.exit(0);
+            }
+        });
     }
 
     public void updateBoard(char[][] board, boolean turn, Player player, TicTacToeService game) {

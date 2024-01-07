@@ -12,6 +12,15 @@ public class Player implements Serializable  {
     int y;
     isMyTurn isMyTurn;
     public volatile boolean gameStarted;
+    isMyTurn wantToPlayNext;
+
+    public void setWantToPlayNext(org.example.isMyTurn wantToPlayNext) {
+        this.wantToPlayNext = wantToPlayNext;
+    }
+
+    public org.example.isMyTurn getWantToPlayNext() {
+        return wantToPlayNext;
+    }
 
     public void setBoard(char[][] board) {
         this.board = board;

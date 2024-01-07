@@ -5,6 +5,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.Scanner;
@@ -69,6 +72,17 @@ public class TicTacToeClient {
             @Override
             public void actionPerformed(ActionEvent e) {
                 frame.dispose();
+
+                try {
+                    Socket socket = new Socket("localhost", 1098);
+                    ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+                    ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+
+
+
+                } catch (IOException exception) {
+                    exception.printStackTrace();
+                }
 
             }
         });
@@ -178,25 +192,39 @@ public class TicTacToeClient {
     public static void playGame(Player player, TicTacToeService game, TicTacToeBoard board) {
 
         try {
-            board.updateBoard(game.display(player), false, player, game); //update board
             System.err.println("Waiting for game to begin...");
             player.setSign(game.getSign(player)); //set sign
-            System.out.println(player.sign);
+
+            while (!game.isInProgress(player))  {
+                Thread.sleep(100);
+            }
+
+            if(!game.isThereSomeone(player)) {
+                cls();
+                board.dispose();
+                findYourRoom(game, player);
+            }
+        //    System.out.println(player.sign);
             System.err.println("Game has started");
 
             SwingWorker<Void, Void> gameWorker = new SwingWorker<Void, Void>() {
                 @Override
                 protected Void doInBackground() throws Exception {
                     player.setIsMyTurn(game.canIMakeMove(player));
-                    System.out.println(player.getIsMyTurn());
+                  Thread.sleep(1000);
                     if (player.isMyTurn.equals(isMyTurn.YES)) {
                         System.out.println("You start");
+                        checkOtherPlayer(game, player, board);
                     } else {
                         System.out.println("Your opponent starts");
+                        checkOtherPlayer(game, player, board);
                     }
 
+                    checkOtherPlayer(game, player, board);
+
                     while (game.isInProgress(player)) {
-                     //   System.out.println(game.isInProgress(player));
+                       checkOtherPlayer(game, player, board);
+                        //      System.out.println(game.isInProgress(player));
                         publish();
 
                         Thread.sleep(100);
@@ -214,10 +242,14 @@ public class TicTacToeClient {
                             board.dispose();
                             findYourRoom(game, player);
                         }   else {
+                            game.wantToPlay(player);
+                            board.updateBoard(new char[][]{{' ', ' ', ' '}, {' ', ' ', ' '}, {' ', ' ', ' '}}, false, player, game);
                             playGame(player, game, board);
                         }
                     }   else {
                         board.dispose();
+                        game.logOut(player);
+                        System.err.println("Closing the application...");
                     }
 
                     return null;
@@ -226,15 +258,20 @@ public class TicTacToeClient {
                 @Override
                 protected void process(java.util.List<Void> chunks) {
                     try {
+                        checkOtherPlayer(game, player, board);
                         player.setIsMyTurn(game.canIMakeMove(player));
+                        checkOtherPlayer(game, player, board);
                         player.setBoard(game.display(player));
 
                         if (player.isMyTurn.equals(isMyTurn.YES)) {
+                            checkOtherPlayer(game, player, board);
                             board.updateBoard(game.display(player), true, player, game);
 
                         } else {
+                            checkOtherPlayer(game, player, board);
                             board.updateBoard(game.display(player), false, player, game);
                         }
+                        checkOtherPlayer(game, player, board);
                     } catch (Exception exception) {
                         System.out.println(exception);
                     }
@@ -245,6 +282,19 @@ public class TicTacToeClient {
 
         } catch (Exception e)   {
             System.out.println(e);
+        }
+    }
+
+    public static void checkOtherPlayer(TicTacToeService game, Player player, TicTacToeBoard board)   {
+        try {
+            if(!game.isThereSomeone(player)) {
+                board.dispose();
+                player.setBoard(new char[][]{{' ', ' ', ' '}, {' ', ' ', ' '}, {' ', ' ', ' '}});
+                findYourRoom(game, player);
+                System.err.println("Opponent left.");
+            }
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
         }
     }
     public static void cls() throws IOException, InterruptedException   {
