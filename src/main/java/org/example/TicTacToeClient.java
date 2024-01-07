@@ -4,8 +4,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.util.Scanner;
 
 public class TicTacToeClient {
     public static void main(String[] args) {
@@ -47,13 +49,13 @@ public class TicTacToeClient {
                     } else {
                         System.err.println("No room available. Creating 'Room 1'.");
                         game.createRoom(player);
-
+                        TicTacToeBoard board = new TicTacToeBoard(game, player);
                         while (!game.waitForRoom(player)) {     //wait for other player
                             System.err.println("Looking for a player...");
                             Thread.sleep(1000);
                         }
                         System.err.println("Player found!");
-                        playGame(player, game);
+                        playGame(player, game, board);
                     }
 
                 } catch (Exception exception)   {
@@ -122,7 +124,8 @@ public class TicTacToeClient {
                         System.err.println("Joining Room " + selectedRoom.roomID);
                         try {
                             game.joinRoom(player, String.valueOf(selectedRoom.roomID));
-                            playGame(player, game);
+                            TicTacToeBoard board = new TicTacToeBoard(game, player);
+                            playGame(player, game, board);
                         } catch (RemoteException ex) {
                             throw new RuntimeException(ex);
                         }
@@ -141,13 +144,14 @@ public class TicTacToeClient {
 
                     System.err.println("Creating a room " + game.findMyRoom(player).roomID);
                     frame.dispose();
-
+                    TicTacToeBoard board = new TicTacToeBoard(game, player);
                         while (!game.waitForRoom(player)) {     //wait for other player
                             System.err.println("Looking for a player...");
                             Thread.sleep(1000);
                         }
                         System.err.println("Player found!");
-                        playGame(player, game);
+
+                        playGame(player, game, board);
                     } catch (RemoteException | InterruptedException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -171,22 +175,20 @@ public class TicTacToeClient {
         });
     }
 
-    public static void playGame(Player player, TicTacToeService game) {
+    public static void playGame(Player player, TicTacToeService game, TicTacToeBoard board) {
 
         try {
-            TicTacToeBoard board = new TicTacToeBoard(); //set starting board
-
             board.updateBoard(game.display(player), false, player, game); //update board
             System.err.println("Waiting for game to begin...");
             player.setSign(game.getSign(player)); //set sign
-
+            System.out.println(player.sign);
             System.err.println("Game has started");
 
             SwingWorker<Void, Void> gameWorker = new SwingWorker<Void, Void>() {
                 @Override
                 protected Void doInBackground() throws Exception {
                     player.setIsMyTurn(game.canIMakeMove(player));
-
+                    System.out.println(player.getIsMyTurn());
                     if (player.isMyTurn.equals(isMyTurn.YES)) {
                         System.out.println("You start");
                     } else {
@@ -194,12 +196,29 @@ public class TicTacToeClient {
                     }
 
                     while (game.isInProgress(player)) {
+                     //   System.out.println(game.isInProgress(player));
                         publish();
 
                         Thread.sleep(100);
                     }
                     publish();
                     System.out.println(game.whoWon(player) + " wins!");
+
+                    System.out.println("Do you want to play again? (Y/N): ");
+                    Scanner scanner = new Scanner(System.in);
+                    String answer = scanner.nextLine();
+
+                    if(answer.equalsIgnoreCase("Y"))    {
+                        cls();
+                        if(!game.isThereSomeone(player)) {
+                            board.dispose();
+                            findYourRoom(game, player);
+                        }   else {
+                            playGame(player, game, board);
+                        }
+                    }   else {
+                        board.dispose();
+                    }
 
                     return null;
                 }
@@ -227,6 +246,11 @@ public class TicTacToeClient {
         } catch (Exception e)   {
             System.out.println(e);
         }
+    }
+    public static void cls() throws IOException, InterruptedException   {
+        ProcessBuilder processBuilder = new ProcessBuilder("cmd", "/c", "cls");
+        Process process = processBuilder.inheritIO().start();
+        process.waitFor();
     }
 
 }

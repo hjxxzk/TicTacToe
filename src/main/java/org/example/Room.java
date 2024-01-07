@@ -52,6 +52,10 @@ public class Room implements Serializable {
         this.player2 = player2;
     }
 
+    public void setPlayer1(Player player1) {
+        this.player1 = player1;
+    }
+
     public Status getStatus() {
         return status;
     }

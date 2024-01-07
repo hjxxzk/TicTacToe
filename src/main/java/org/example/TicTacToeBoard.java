@@ -4,11 +4,19 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.rmi.RemoteException;
 
 public class TicTacToeBoard extends JFrame {
-    private JPanel boardPanel;
-    public TicTacToeBoard() {
+    private final JPanel boardPanel;
+    private final TicTacToeService game;
+    private final Player player;
+    public TicTacToeBoard(TicTacToeService game, Player player) {
+
+        this.game = game;
+        this.player = player;
+
         setTitle("Tic Tac Toe");
         setSize(300, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -17,19 +25,33 @@ public class TicTacToeBoard extends JFrame {
         add(boardPanel);
         setVisible(true);
         setLocationRelativeTo(null);
+//        addWindowListener(new WindowAdapter() {
+//            @Override
+//            public void windowClosing(WindowEvent e) {
+//
+//                try {
+//                    game.logOut(player);
+//                } catch (RemoteException ex) {
+//                    throw new RuntimeException(ex);
+//                }
+//                System.err.println("Closing the application...");
+//
+//                System.exit(0);
+//            }
+//        });
     }
 
     public void updateBoard(char[][] board, boolean turn, Player player, TicTacToeService game) {
-            boardPanel.removeAll();
+        boardPanel.removeAll();
 
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    JButton button = createButton(board, i, j, turn, player, game);
-                    boardPanel.add(button);
-                }
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                JButton button = createButton(board, i, j, turn, player, game);
+                boardPanel.add(button);
             }
-            revalidate();
-            repaint();
+        }
+        revalidate();
+        repaint();
     }
 
 

@@ -6,6 +6,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnable, TicTacToeService {
     ArrayList<Player> players = new ArrayList<>();
@@ -21,28 +22,66 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
 
     @Override
     public void run()   {
+        boolean running = true;
+//        while(running) {
+//
+//            if(roomActive == null)  {
+//                running = false;
+//            }   else if (roomActive.status.equals(Status.BUSY)) {
+//
+//                System.out.println("Game has started");
+//                char playerOne = roomActive.player1.getSign();
+//                char playerTwo = roomActive.player2.getSign();
+//                setOrder(roomActive);
+//                roomActive.setGameInProgress(isMyTurn.YES);
+//
+//                while (!gameInProgress(playerOne, playerTwo, roomActive)) {
+//
+//                    if(roomActive.player1 == null || roomActive.player2 == null) {
+//                        roomActive.setStatus(Status.READY);
+//                        roomActive.setGameInProgress(isMyTurn.NO);
+//                        break;
+//                    }
+//
+//                    if (roomActive.player1.moveMade) {
+//                        System.out.println("true");
+//                        roomActive.setBoard(roomActive.player1.getBoard());
+//                        roomActive.player1.setMoveMade(false);
+//                    }
+//
+//                    if (roomActive.player2.moveMade) {
+//                        roomActive.setBoard(roomActive.player2.getBoard());
+//                        roomActive.player2.setMoveMade(false);
+//                    }
+//                }
+//
+//                roomActive.setGameInProgress(isMyTurn.NO);
+//                roomActive.player2.setIsMyTurn(isMyTurn.NO);
+//                roomActive.player1.setIsMyTurn(isMyTurn.NO);
+//                try {
+//                    Thread.sleep(5000);
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
+//                roomActive.player1.setSign(playerTwo);
+//                roomActive.player2.setSign(playerOne);
+//                roomActive.setBoard(new char[][]{{' ', ' ', ' '}, {' ', ' ', ' '}, {' ', ' ', ' '}});
+//
+//            }  else {
+//
+//                if(roomActive.player1 != null && roomActive.player2!= null)
+//                    roomActive.setStatus(Status.BUSY);
+//
+//            }
+//        }
+    }
 
-        System.out.println("Game started");
-        char playerOne = roomActive.player1.getSign();
-        char playerTwo = roomActive.player2.getSign();
-        roomActive.setGameInProgress(isMyTurn.YES);
-        while(!gameInProgress(playerOne, playerTwo, roomActive)) {
-           System.out.println(gameInProgress(playerOne, playerTwo, roomActive));
-            if (roomActive.player1.moveMade) {
-                System.out.println("true");
-                roomActive.setBoard(roomActive.player1.getBoard());
-                roomActive.player1.setMoveMade(false);
-            }
-
-            if (roomActive.player2.moveMade) {
-                roomActive.setBoard(roomActive.player2.getBoard());
-                roomActive.player2.setMoveMade(false);
-            }
+    private void setOrder(Room roomActive)  {
+        if(roomActive.player1.sign == 'X')  {
+            roomActive.player1.setIsMyTurn(isMyTurn.YES);
+        }   else {
+            roomActive.player2.setIsMyTurn(isMyTurn.YES);
         }
-        roomActive.setGameInProgress(isMyTurn.NO);
-        roomActive.player2.setIsMyTurn(isMyTurn.NO);
-        roomActive.player1.setIsMyTurn(isMyTurn.NO);
-
     }
     @Override
     public void start(String text) throws RemoteException {
@@ -59,28 +98,52 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
     @Override
     public void makeMove(Player player) throws RemoteException {
 
+//        Room roomActive = findMyRoom(player);
+//        roomActive.setBoard(player.getBoard());
+//
+//        roomActive = rooms.stream().filter(Room -> Room.player1.id.equals(player.id))
+//                .findFirst()
+//                .orElse(null);
+//
+//        if(roomActive == null)  {
+//            roomActive = rooms.stream().filter(Room -> Room.player2.id.equals(player.id))
+//                    .findFirst()
+//                    .orElse(null);
+//            Objects.requireNonNull(roomActive).player2.setBoard(player.getBoard());
+//            Objects.requireNonNull(roomActive).player2.setMoveMade(true);
+//            roomActive.player2.setIsMyTurn(isMyTurn.NO);
+//            roomActive.player1.setIsMyTurn(isMyTurn.YES);
+//
+//
+//        } else {
+//            Objects.requireNonNull(roomActive).player1.setBoard(player.getBoard());
+//            roomActive.player1.setMoveMade(true);
+//            roomActive.player1.setIsMyTurn(isMyTurn.NO);
+//            roomActive.player2.setIsMyTurn(isMyTurn.YES);
+//        }
+
         Room roomActive = findMyRoom(player);
-        roomActive.setBoard(player.getBoard());
 
-        roomActive = rooms.stream().filter(Room -> Room.player1.id.equals(player.id))
-                .findFirst()
-                .orElse(null);
+        if (roomActive != null) {
+            roomActive.setBoard(player.getBoard());
 
-        if(roomActive == null)  {
-            roomActive = rooms.stream().filter(Room -> Room.player2.id.equals(player.id))
-                    .findFirst()
-                    .orElse(null);
-            Objects.requireNonNull(roomActive).player2.setBoard(player.getBoard());
-            Objects.requireNonNull(roomActive).player2.setMoveMade(true);
-            roomActive.player2.setIsMyTurn(isMyTurn.NO);
-            roomActive.player1.setIsMyTurn(isMyTurn.YES);
+            if (roomActive.player1 != null && roomActive.player1.id.equals(player.id)) {
+                roomActive.player1.setBoard(player.getBoard());
+                roomActive.player1.setMoveMade(true);
+                roomActive.player1.setIsMyTurn(isMyTurn.NO);
 
+                if (roomActive.player2 != null) {
+                    roomActive.player2.setIsMyTurn(isMyTurn.YES);
+                }
+            } else if (roomActive.player2 != null && roomActive.player2.id.equals(player.id)) {
+                roomActive.player2.setBoard(player.getBoard());
+                roomActive.player2.setMoveMade(true);
+                roomActive.player2.setIsMyTurn(isMyTurn.NO);
 
-        } else {
-            Objects.requireNonNull(roomActive).player1.setBoard(player.getBoard());
-            roomActive.player1.setMoveMade(true);
-            roomActive.player1.setIsMyTurn(isMyTurn.NO);
-            roomActive.player2.setIsMyTurn(isMyTurn.YES);
+                if (roomActive.player1 != null) {
+                    roomActive.player1.setIsMyTurn(isMyTurn.YES);
+                }
+            }
         }
 
 
@@ -101,65 +164,109 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
                 .filter(Room -> (Room.getPlayer1().getId().equals(player.getId())))
                 .findFirst()
                 .orElse(null);
-
-        return Objects.requireNonNull(doWeHaveARoom).player2 != null;
+        if (doWeHaveARoom != null)  {
+            return Objects.requireNonNull(doWeHaveARoom).player2 != null;
+        }   else {
+            doWeHaveARoom = rooms.stream()
+                    .filter(Room -> (Room.getPlayer2().getId().equals(player.getId())))
+                    .findFirst()
+                    .orElse(null);
+        }
+        return Objects.requireNonNull(doWeHaveARoom).player1 != null;
     }
 
     @Override
     public boolean isInProgress(Player player) throws RemoteException {
 
-        Room roomActive = rooms.stream().filter(Room -> Room.player1.id.equals(player.id) || Room.player2.id.equals(player.id))
-                .findFirst()
-                .orElse(null);
+        Room roomActive = findMyRoom(player);
 
         return Objects.requireNonNull(roomActive).gameInProgress == isMyTurn.YES;
     }
 
     @Override
     public Room findMyRoom(Player player)   {
-        return rooms.stream().filter(Room -> Room.player1.id.equals(player.id) ||
+        return rooms.stream().filter(Room -> (Room.player1 != null && Room.player1.id.equals(player.id)) ||
                 (Room.player2 != null && Room.player2.id.equals(player.id)))
                 .findFirst()
                 .orElse(null);
     }
 
     @Override
-    public char getSign(Player player) throws RemoteException {
+    public void logOut(Player player) throws RemoteException {
+        Room roomActive = findMyRoom(player);
 
-        Room roomActive = rooms.stream().filter(Room -> Room.player1.id.equals(player.id))
-                .findFirst()
-                .orElse(null);
+        if(roomActive.player1 != null && roomActive.player1.id.equals(player.id))   {
+            roomActive.setPlayer1(null);
+            roomActive.setStatus(Status.READY);
+            if (roomActive.player2 == null) {
+                rooms.remove(roomActive);
+            }
+        }
 
-        if(roomActive == null)  {
-            roomActive = rooms.stream().filter(Room -> Room.player2.id.equals(player.id))
-                    .findFirst()
-                    .orElse(null);
-
-            return roomActive.player2.getSign();
-
-
-        } else {
-            return roomActive.player1.getSign();
+        if(roomActive.player2 != null && roomActive.player2.id.equals(player.id))   {
+            roomActive.setPlayer2(null);
+            roomActive.setStatus(Status.READY);
+            if (roomActive.player1 == null) {
+                rooms.remove(roomActive);
+            }
         }
     }
 
     @Override
-    public isMyTurn canIMakeMove(Player player) throws RemoteException {
-        Room roomActive = rooms.stream().filter(Room -> Room.player1.id.equals(player.id))
-                .findFirst()
-                .orElse(null);
+    public boolean isThereSomeone(Player player) throws RemoteException {
+        Room myRoom = findMyRoom(player);
 
-        if(roomActive == null)  {
-            roomActive = rooms.stream().filter(Room -> Room.player2.id.equals(player.id))
-                    .findFirst()
-                    .orElse(null);
-
-            assert roomActive != null;
-            return roomActive.player2.isMyTurn;
-
-        } else {
-            return roomActive.player1.isMyTurn;
+        if(myRoom.player1 == null || myRoom.player2 == null) {
+            return false;
+        }   else {
+            return true;
         }
+    }
+
+    @Override
+    public char getSign(Player player) throws RemoteException {
+
+        Room roomActive = findMyRoom(player);
+
+        if (roomActive != null) {
+            if (roomActive.player1 != null && roomActive.player1.id.equals(player.getId())) {
+                return roomActive.player1.getSign();
+            } else if (roomActive.player2 != null && roomActive.player2.id.equals(player.getId())) {
+                return roomActive.player2.getSign();
+            }
+        }
+        return ' ';
+//        Room roomActive = rooms.stream().filter(Room -> Room.player1.id.equals(player.getId()))
+//                .findFirst()
+//                .orElse(null);
+//
+//        if(roomActive == null)  {
+//            roomActive = rooms.stream().filter(Room -> Room.player2.id.equals(player.getId()))
+//                    .findFirst()
+//                    .orElse(null);
+//
+//            return Objects.requireNonNull(roomActive).player2.getSign();
+//
+//
+//        } else {
+//            return roomActive.player1.getSign();
+//        }
+    }
+
+    @Override
+    public isMyTurn canIMakeMove(Player player) throws RemoteException {
+
+        Room roomActive = findMyRoom(player);
+
+        if (roomActive != null) {
+            if (roomActive.player1 != null && roomActive.player1.id.equals(player.getId())) {
+                return roomActive.player1.isMyTurn;
+            } else if (roomActive.player2 != null && roomActive.player2.id.equals(player.getId())) {
+                return roomActive.player2.isMyTurn;
+            }
+        }
+
+        return isMyTurn.NO;
 
     }
 
@@ -167,7 +274,9 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
 
     @Override
     public ArrayList<Room> showRoomList() throws RemoteException {
-        return rooms;
+        return rooms.stream()
+                .filter(room -> room.getStatus().equals(Status.READY))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Override
@@ -193,7 +302,12 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
                 .findFirst()
                 .orElse(null);
 
-        Objects.requireNonNull(roomToJoin).setPlayer2(player);
+        if(Objects.requireNonNull(roomToJoin).player1 == null)  {
+            roomToJoin.setPlayer1(player);
+        }   else if (roomToJoin.player2 == null) {
+            roomToJoin.setPlayer2(player);
+        }
+
         roomToJoin.player1.setSign('X');
         roomToJoin.player2.setSign('O');
         roomToJoin.player1.setIsMyTurn(isMyTurn.YES);
@@ -223,11 +337,14 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
     //logic of the game /////////////////////////////////////////////////////////////////////////////////////////////
 
     private static boolean gameInProgress(char playerOne, char playerTwo, Room roomActive) {
-         return didSomeoneWon(playerOne, playerTwo, roomActive) || isADraw(roomActive);
+        boolean didWin = didSomeoneWon(playerOne, playerTwo, roomActive);
+        boolean isDraw = isADraw(roomActive);
+
+        return didWin || isDraw;
     }
 
     private static boolean didSomeoneWon(char playerOne, char playerTwo, Room roomActive)   {
-
+        System.out.println("tak");
        char[][] board = roomActive.board;
         for (int i = 0; i < 3; i++) {
             if ((board[i][0] == playerOne && board[i][1] == playerOne && board[i][2] == playerOne) ||   //vertical
@@ -261,6 +378,7 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
     }
 
     private static boolean isADraw(Room roomActive)   {
+        System.out.println("tak");
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (roomActive.board[i][j] == ' ') {
@@ -277,13 +395,14 @@ public class TicTacToeServiceImpl extends UnicastRemoteObject implements Runnabl
         try {
 
             TicTacToeService game = new TicTacToeServiceImpl();
-            LocateRegistry.createRegistry(1099);
-            Naming.rebind("rmi://localhost:1099/TicTacToeService", game);
+            LocateRegistry.createRegistry(1098);
+            Naming.rebind("rmi://localhost:1098/TicTacToeService", game);
             System.err.println("Server running...");
 
         } catch (Exception exception) {
 
             System.out.println(exception);
+            exception.printStackTrace();
         }
 
     }

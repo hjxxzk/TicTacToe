@@ -19,6 +19,8 @@ public interface TicTacToeService extends Remote {
      void joinRoom(Player player, String selectedRoom) throws RemoteException;
      String whoWon(Player player) throws RemoteException;
      Room findMyRoom(Player player) throws RemoteException;
+     void logOut(Player player) throws RemoteException;
+     boolean isThereSomeone(Player player) throws RemoteException;
 
 
 }
